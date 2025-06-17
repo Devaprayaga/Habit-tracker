@@ -768,7 +768,16 @@
             try {
                 // Global variables from Canvas environment
                 appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Assign to global appId
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                const const firebaseConfig = {
+                    apiKey: "AIzaSyAX3WOwUy4_VBQt_YXoKwhvAJbFtRVy09Y",
+                    authDomain: "my-habit-tracker-30006.firebaseapp.com",
+                    projectId: "my-habit-tracker-30006",
+                    storageBucket: "my-habit-tracker-30006.firebasestorage.app",
+                    messagingSenderId: "219365231052",
+                    appId: "1:219365231052:web:8ca1fcec8cd069c9a1b569",
+                    measurementId: "G-HFL7NDML91"
+                };
+
 
                 console.log("Initializing Firebase with App ID:", appId); // Debugging
                 console.log("Firebase Config:", firebaseConfig); // Debugging
