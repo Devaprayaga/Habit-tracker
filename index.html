@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Advanced Habit Tracker</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons (for drag handle, edit, delete, archive) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom CSS Variables for your palette */
+        :root {
+            --color-black: #000000;
+            --color-earthy-gray: #B6B09F;
+            --color-light-cream: #EAE4D5;
+            --color-very-light-gray: #F2F2F2;
+            --color-success: #537D5D;
+            --color-warning: #8A2D3B;
+            --color-skipped: #BE5B50;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--color-very-light-gray); /* Main background */
+            color: var(--color-black);
+        }
+
+        /* Custom scrollbar for scrollable areas */
+        .scrollable-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        .scrollable-area::-webkit-scrollbar-track {
+            background: var(--color-light-cream);
+            border-radius: 10px;
+        }
+        .scrollable-area::-webkit-scrollbar-thumb {
+            background: var(--color-earthy-gray);
+            border-radius: 10px;
+        }
+        .scrollable-area::-webkit-scrollbar-thumb:hover {
+            background: var(--color-black);
+        }
+
+        /* Styles for drag and drop feedback */
+        .dragging {
+            opacity: 0.5;
+            border: 2px dashed var(--color-earthy-gray);
+        }
+
+        .drop-target {
+            background-color: rgba(var(--color-earthy-gray-rgb), 0.2); /* Use RGBA for transparency */
+            border: 2px dashed var(--color-earthy-gray);
+        }
+
+        /* Modal specific styling */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Custom checkbox style (Tailwind doesn't perfectly match custom palette for checked state) */
+        input[type="checkbox"]:checked {
+            background-color: var(--color-success);
+            border-color: var(--color-success);
+        }
+        input[type="checkbox"]:checked:focus {
+            box-shadow: 0 0 0 2px var(--color-success);
+        }
+
+        /* Custom button styles for better appearance */
+        .btn-primary {
+            background-color: var(--color-black);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary:hover {
+            background-color: var(--color-earthy-gray);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: var(--color-earthy-gray);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .btn-secondary:hover {
+            background-color: var(--color-black);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background-color: var(--color-warning);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-danger:hover {
+            background-color: #A03A4A; /* Slightly darker red */
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background-color: var(--color-success);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-success:hover {
+            background-color: #699C74; /* Slightly darker green */
+            transform: translateY(-1px);
+        }
+
+        /* Habit card specific styling */
+        .habit-card {
+            background-color: var(--color-light-cream);
+            color: var(--color-black);
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .habit-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 20px -5px rgba(0, 0, 0, 0.15), 0 6px 8px -3px rgba(0, 0, 0, 0.08);
+        }
+        .habit-card.completed {
+            border-left: 8px solid var(--color-success);
+            opacity: 0.9;
+        }
+        .habit-card.skipped {
+            border-left: 8px solid var(--color-skipped);
+            opacity: 0.9;
+        }
+        .habit-card.not-completed {
+            border-left: 8px solid var(--color-warning);
+            opacity: 0.9;
+        }
+
+        /* Calendar styles */
+        .calendar-day {
+            min-height: 80px; /* Ensure sufficient height for day cells */
+        }
+        .menstruation-day {
+            background-color: rgba(var(--color-warning-rgb), 0.2); /* Light red tint for menstruation days */
+            border: 1px solid var(--color-warning);
+        }
+
+        /* Helper to get RGB values from hex for rgba usage */
+        .rgb-black { --color-black-rgb: 0,0,0; }
+        .rgb-earthy-gray { --color-earthy-gray-rgb: 182,176,159; }
+        .rgb-light-cream { --color-light-cream-rgb: 234,228,213; }
+        .rgb-very-light-gray { --color-very-light-gray-rgb: 242,242,242; }
+        .rgb-success { --color-success-rgb: 83,125,93; }
+        .rgb-warning { --color-warning-rgb: 138,45,59; }
+        .rgb-skipped { --color-skipped-rgb: 190,91,80; }
+
+        /* Ensure category color circles are visible */
+        .category-color-circle {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        /* Styles for the category color picker */
+        .color-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr); /* 6 columns */
+            gap: 0.5rem;
+        }
+        .color-picker-item {
+            width: 32px; /* Fixed size */
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+        .color-picker-item.selected {
+            border-color: var(--color-black); /* Highlight selected color */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 bg-gray-50 text-gray-900 rgb-black rgb-earthy-gray rgb-light-cream rgb-very-light-gray rgb-success rgb-warning rgb-skipped">
+    <div class="w-full max-w-4xl bg-white p-6 md:p-8 rounded-xl shadow-2xl space-y-8 my-8">
+        <h1 class="text-4xl font-bold text-center mb-6" style="color: var(--color-black);">Your Daily Habit Tracker</h1>
+
+        <!-- User ID Display and Loading Message -->
+        <div id="userIdDisplay" class="text-sm text-center text-gray-500 mb-4 break-words">
+            Loading user ID and app...
+        </div>
+        <p id="appLoadingMessage" class="text-center text-gray-500 mb-4">Initializing application...</p>
+
+
+        <!-- Message Box for Feedback -->
+        <div id="messageBox" class="p-4 rounded-lg mb-6 hidden" role="alert">
+            <!-- Messages will appear here -->
+        </div>
+
+        <!-- Daily Dashboard Section -->
+        <div class="text-center p-6 rounded-lg shadow-inner" style="background-color: var(--color-light-cream);">
+            <p id="motivationalQuote" class="text-lg font-semibold italic mb-4" style="color: var(--color-black);">"Loading daily inspiration..."</p>
+            <div class="mb-4">
+                <p class="text-xl font-bold mb-2" style="color: var(--color-black);">Daily Progress:</p>
+                <div class="w-full bg-gray-200 rounded-full h-4 relative">
+                    <div id="progressBar" class="h-4 rounded-full" style="width: 0%; background-color: var(--color-success); transition: width 0.5s ease-out;"></div>
+                    <span id="progressText" class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white">0% Completed</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Overview Calendar -->
+        <div class="bg-gray-50 p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold text-center mb-4" style="color: var(--color-black);">Monthly Overview</h2>
+            <div class="flex justify-between items-center mb-4">
+                <button id="prevMonthBtn" class="btn-secondary px-4 py-2 rounded-lg">&lt; Prev</button>
+                <span id="currentMonthYear" class="text-xl font-semibold" style="color: var(--color-black);"></span>
+                <button id="nextMonthBtn" class="btn-secondary px-4 py-2 rounded-lg">Next &gt;</button>
+            </div>
+            <div class="flex justify-between text-sm font-semibold text-gray-600 mb-2" style="color: var(--color-earthy-gray);">
+                <div class="w-full text-center">Sun</div>
+                <div class="w-full text-center">Mon</div>
+                <div class="w-full text-center">Tue</div>
+                <div class="w-full text-center">Wed</div>
+                <div class="w-full text-center">Thu</div>
+                <div class="w-full text-center">Fri</div>
+                <div class="w-full text-center">Sat</div>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-1">
+                <!-- Calendar days will be rendered here -->
+            </div>
+            <div class="flex justify-end mt-4">
+                <button id="menstruationModeToggle" class="btn-secondary flex items-center px-4 py-2 text-sm">
+                    <i class="fas fa-venus text-pink-400 mr-2"></i> Toggle Menstruation Log
+                </button>
+            </div>
+        </div>
+
+        <!-- Habits Actions: Add, Filter, Sort -->
+        <div class="flex flex-col sm:flex-row gap-4 items-center justify-between p-4 bg-gray-50 rounded-lg shadow-md">
+            <button id="addNewHabitBtn" class="btn-primary flex-1 sm:flex-none w-full sm:w-auto">
+                <i class="fas fa-plus mr-2"></i> Add New Habit
+            </button>
+
+            <!-- Filter Dropdown -->
+            <div class="relative w-full sm:w-auto">
+                <select id="categoryFilter" class="w-full p-3 border-2 rounded-lg appearance-none cursor-pointer focus:outline-none focus:border-black" style="border-color: var(--color-earthy-gray); color: var(--color-black); background-color: var(--color-light-cream);">
+                    <option value="all">Filter by Category</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+
+            <!-- Sort Dropdown -->
+            <div class="relative w-full sm:w-auto">
+                <select id="sortOption" class="w-full p-3 border-2 rounded-lg appearance-none cursor-pointer focus:outline-none focus:border-black" style="border-color: var(--color-earthy-gray); color: var(--color-black); background-color: var(--color-light-cream);">
+                    <option value="order">Default Order</option>
+                    <option value="name">Name (A-Z)</option>
+                    <option value="createdAt">Newest First</option>
+                    <option value="progress">Today's Progress</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Habits List Section -->
+        <div id="habitsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 scrollable-area max-h-[600px] overflow-y-auto min-h-[200px]">
+            <!-- Habits will be loaded here -->
+            <p id="noHabitsMessage" class="text-center text-gray-500 col-span-full hidden">No habits added yet. Click "Add New Habit" to get started!</p>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Add/Edit Habit Modal -->
+    <div id="habitModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 modal-overlay hidden z-50 p-4">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto" style="background-color: var(--color-light-cream); color: var(--color-black);">
+            <h2 id="habitModalTitle" class="text-2xl font-bold mb-6 text-center">Add New Habit</h2>
+
+            <form id="habitForm" class="space-y-4">
+                <div>
+                    <label for="habitName" class="block text-sm font-medium mb-1">Habit Name:</label>
+                    <input type="text" id="habitName" required class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
+                </div>
+
+                <div>
+                    <label for="habitStartDate" class="block text-sm font-medium mb-1">Start Date:</label>
+                    <input type="date" id="habitStartDate" required class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Target Frequency:</label>
+                    <select id="frequencyType" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
+                        <option value="daily">Daily</option>
+                        <option value="x_times_per_week">X times per week</option>
+                        <option value="specific_days">Specific days of the week</option>
+                    </select>
+                </div>
+
+                <div id="frequencyXTimes" class="hidden">
+                    <label for="frequencyXValue" class="block text-sm font-medium mb-1">How many times per week?</label>
+                    <input type="number" id="frequencyXValue" min="1" max="7" value="1" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
+                </div>
+
+                <div id="frequencySpecificDays" class="hidden">
+                    <label class="block text-sm font-medium mb-1">Select Days:</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="specificDays" value="Mon" class="mr-1"> Mon
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="specificDays" value="Tue" class="mr-1"> Tue
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="specificDays" value="Wed" class="mr-1"> Wed
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="specificDays" value="Thu" class="mr-1"> Thu
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="specificDays" value="Fri" class="mr-1"> Fri
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="specificDays" value="Sat" class="mr-1"> Sat
+                        </label>
+                        <label class="flex items-center text-sm">
+                            <input type="checkbox" name="specificDays" value="Sun" class="mr-1"> Sun
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="habitCategory" class="block text-sm font-medium mb-1">Category:</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="habitCategory" list="categorySuggestions" class="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
+                        <datalist id="categorySuggestions"></datalist>
+                        <div id="categoryColorPreview" class="w-6 h-6 rounded-full border border-gray-300 shadow-sm" style="background-color: #A0AEC0;"></div>
+                        <button type="button" id="editCategoryColorsBtn" class="btn-secondary px-3 py-1 text-sm">Edit Colors</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="habitGoal" class="block text-sm font-medium mb-1">Goal:</label>
+                    <textarea id="habitGoal" rows="2" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);"></textarea>
+                </div>
+
+                <div>
+                    <label for="habitType" class="block text-sm font-medium mb-1">Habit Type:</label>
+                    <select id="habitType" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
+                        <option value="binary">Binary (Yes/No)</option>
+                        <option value="quantitative">Quantitative</option>
+                        <option value="duration">Duration</option>
+                    </select>
+                </div>
+
+                <div id="unitSelection" class="hidden">
+                    <label for="habitUnit" class="block text-sm font-medium mb-1">Unit:</label>
+                    <select id="habitUnit" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
+                        <option value="pages">pages</option>
+                        <option value="liters">liters</option>
+                        <option value="minutes">minutes</option>
+                        <option value="steps">steps</option>
+                        <option value="hours">hours</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="habitIcon" class="block text-sm font-medium mb-1">Icon (Emoji):</label>
+                    <select id="habitIcon" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black text-2xl" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
+                        <option value="💪">💪 Strength</option>
+                        <option value="💧">💧 Water</option>
+                        <option value="📚">📚 Read</option>
+                        <option value="🧘‍♀️">🧘‍♀️ Meditate</option>
+                        <option value="🏃‍♂️">🏃‍♂️ Run</option>
+                        <option value=" ">🍎 Healthy Food</option>
+                        <option value="😴">😴 Sleep</option>
+                        <option value="✍️">✍️ Write</option>
+                        <option value="🧹">🧹 Clean</option>
+                        <option value="💰">💰 Finance</option>
+                        <option value="🌱">🌱 Grow</option>
+                        <option value="🧠">🧠 Learn</option>
+                        <option value="💡">💡 Idea</option>
+                        <option value="🎧">🎧 Listen</option>
+                        <option value="💬">💬 Connect</option>
+                        <option value="🎨">🎨 Create</option>
+                        <option value="💻">💻 Code</option>
+                        <option value="🚿">🚿 Shower</option>
+                        <option value="🚶">🚶 Walk</option>
+                        <option value="🧼">🧼 Tidy</option>
+                        <option value="😊">😊 Gratitude</option>
+                        <option value="📝">📝 Journal</option>
+                        <option value="🗓️">🗓️ Plan</option>
+                        <option value="🎤">🎤 Practice</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" id="archiveHabitBtn" class="btn-secondary hidden">Archive Habit</button>
+                    <button type="button" id="deleteHabitBtn" class="btn-danger hidden">Delete Habit</button>
+                    <button type="button" id="cancelHabitBtn" class="btn-secondary">Cancel</button>
+                    <button type="submit" id="saveHabitBtn" class="btn-primary">Save Habit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Color Picker Modal -->
+    <div id="categoryColorModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 modal-overlay hidden z-[60] p-4">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto" style="background-color: var(--color-light-cream); color: var(--color-black);">
+            <h2 class="text-2xl font-bold mb-6 text-center">Edit Category Colors</h2>
+
+            <div id="categoryColorList" class="space-y-4 max-h-80 overflow-y-auto scrollable-area">
+                <!-- Category color settings will be rendered here -->
+                <p class="text-gray-600 text-center" id="noCategoriesMessage">No categories created yet. Add a habit with a new category.</p>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" id="saveCategoryColorsBtn" class="btn-primary">Done</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Habit Details/Stats Modal -->
+    <div id="habitDetailsModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 modal-overlay hidden z-50 p-4">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto" style="background-color: var(--color-light-cream); color: var(--color-black);">
+            <h2 id="detailsHabitName" class="text-2xl font-bold mb-4 text-center">Habit Details</h2>
+
+            <div class="space-y-4">
+                <p><strong class="font-semibold">Type:</strong> <span id="detailsHabitType"></span></p>
+                <p><strong class="font-semibold">Frequency:</strong> <span id="detailsHabitFrequency"></span></p>
+                <p><strong class="font-semibold">Category:</strong> <span id="detailsHabitCategory" class="font-semibold"></span></p>
+                <p><strong class="font-semibold">Goal:</strong> <span id="detailsHabitGoal"></span></p>
+
+                <h3 class="text-xl font-bold mt-6 mb-3">Streaks & Stats</h3>
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="p-3 bg-gray-100 rounded-lg shadow-sm" style="background-color: var(--color-very-light-gray);">
+                        <p class="text-sm text-gray-600" style="color: var(--color-earthy-gray);">Current Streak</p>
+                        <p id="currentStreak" class="text-3xl font-bold" style="color: var(--color-black);">0</p>
+                        <p class="text-lg" style="color: var(--color-black);">days</p>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-lg shadow-sm" style="background-color: var(--color-very-light-gray);">
+                        <p class="text-sm text-gray-600" style="color: var(--color-earthy-gray);">Longest Streak</p>
+                        <p id="longestStreak" class="text-3xl font-bold" style="color: var(--color-black);">0</p>
+                        <p class="text-lg" style="color: var(--color-black);">days</p>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold mt-6 mb-3">Completion History</h3>
+                <div id="detailsCalendarGrid" class="grid grid-cols-7 gap-1 text-sm">
+                    <!-- Mini calendar for habit history will be rendered here -->
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" id="closeDetailsModalBtn" class="btn-primary">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import {
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            doc,
+            addDoc,
+            setDoc,
+            updateDoc,
+            deleteDoc,
+            onSnapshot,
+            query,
+            orderBy,
+            getDoc,
+            where
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Global Variables ---
+        let app, db, auth;
+        let userId = null;
+        let isAuthReady = false; // Flag to ensure auth is ready before Firestore ops
+        let allHabits = []; // Stores all fetched habits
+        let allCategoryColors = {}; // Stores user-defined category colors
+        let menstruationDays = []; // Stores logged menstruation days
+        let currentDisplayedMonth = new Date(); // For the monthly calendar
+        let appId; // Declare appId globally here
+
+        // --- DOM Elements ---
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const appLoadingMessage = document.getElementById('appLoadingMessage');
+        const messageBox = document.getElementById('messageBox');
+
+        // Dashboard elements
+        const motivationalQuoteEl = document.getElementById('motivationalQuote');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+
+        // Monthly Calendar elements
+        const currentMonthYearEl = document.getElementById('currentMonthYear');
+        const prevMonthBtn = document.getElementById('prevMonthBtn');
+        const nextMonthBtn = document.getElementById('nextMonthBtn');
+        const calendarGrid = document.getElementById('calendarGrid');
+        const menstruationModeToggle = document.getElementById('menstruationModeToggle');
+        let isMenstruationMode = false;
+
+        // Habit Actions
+        const addNewHabitBtn = document.getElementById('addNewHabitBtn');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const sortOption = document.getElementById('sortOption');
+        const habitsList = document.getElementById('habitsList');
+        const noHabitsMessage = document.getElementById('noHabitsMessage');
+
+        // Habit Modal Elements
+        const habitModal = document.getElementById('habitModal');
+        const habitModalTitle = document.getElementById('habitModalTitle');
+        const habitForm = document.getElementById('habitForm');
+        const habitNameInput = document.getElementById('habitName');
+        const habitStartDateInput = document.getElementById('habitStartDate');
+        const frequencyTypeSelect = document.getElementById('frequencyType');
+        const frequencyXTimesDiv = document.getElementById('frequencyXTimes');
+        const frequencyXValueInput = document.getElementById('frequencyXValue');
+        const frequencySpecificDaysDiv = document.getElementById('frequencySpecificDays');
+        const specificDaysCheckboxes = document.querySelectorAll('input[name="specificDays"]');
+        const habitCategoryInput = document.getElementById('habitCategory');
+        const categorySuggestionsDatalist = document.getElementById('categorySuggestions');
+        const categoryColorPreview = document.getElementById('categoryColorPreview');
+        const editCategoryColorsBtn = document.getElementById('editCategoryColorsBtn');
+        const habitGoalInput = document.getElementById('habitGoal');
+        const habitTypeSelect = document.getElementById('habitType');
+        const unitSelectionDiv = document.getElementById('unitSelection');
+        const habitUnitSelect = document.getElementById('habitUnit');
+        const habitIconSelect = document.getElementById('habitIcon');
+        const saveHabitBtn = document.getElementById('saveHabitBtn');
+        const cancelHabitBtn = document.getElementById('cancelHabitBtn');
+        const deleteHabitBtn = document.getElementById('deleteHabitBtn');
+        const archiveHabitBtn = document.getElementById('archiveHabitBtn');
+
+        let currentEditingHabitId = null; // To store ID of habit being edited
+
+        // Category Color Modal Elements
+        const categoryColorModal = document.getElementById('categoryColorModal');
+        const categoryColorList = document.getElementById('categoryColorList');
+        const saveCategoryColorsBtn = document.getElementById('saveCategoryColorsBtn');
+        const noCategoriesMessage = document.getElementById('noCategoriesMessage');
+
+        // Habit Details/Stats Modal
+        const habitDetailsModal = document.getElementById('habitDetailsModal');
+        const detailsHabitNameEl = document.getElementById('detailsHabitName');
+        const detailsHabitTypeEl = document.getElementById('detailsHabitType');
+        const detailsHabitFrequencyEl = document.getElementById('detailsHabitFrequency');
+        const detailsHabitCategoryEl = document.getElementById('detailsHabitCategory');
+        const detailsHabitGoalEl = document.getElementById('detailsHabitGoal');
+        const currentStreakEl = document.getElementById('currentStreak');
+        const longestStreakEl = document.getElementById('longestStreak');
+        const detailsCalendarGrid = document.getElementById('detailsCalendarGrid');
+        const closeDetailsModalBtn = document.getElementById('closeDetailsModalBtn');
+
+        // --- Utility Functions ---
+
+        /**
+         * Displays a message in the message box.
+         * @param {string} message - The message to display.
+         * @param {'info'|'success'|'error'} type - The type of message.
+         * @param {number} duration - How long to show the message in ms.
+         */
+        function showMessage(message, type = 'info', duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden', 'bg-blue-100', 'bg-red-100', 'bg-green-100');
+            messageBox.classList.remove('text-blue-800', 'text-red-800', 'text-green-800');
+            messageBox.classList.remove('border-blue-200', 'border-red-200', 'border-green-200');
+
+            if (type === 'info') {
+                messageBox.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-200');
+                messageBox.style.backgroundColor = 'rgba(var(--color-earthy-gray-rgb), 0.1)';
+                messageBox.style.borderColor = 'var(--color-earthy-gray)';
+                messageBox.style.color = 'var(--color-black)';
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-100', 'text-green-800', 'border-green-200');
+                messageBox.style.backgroundColor = 'rgba(var(--color-success-rgb), 0.1)';
+                messageBox.style.borderColor = 'var(--color-success)';
+                messageBox.style.color = 'var(--color-success)';
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-800', 'border-red-200');
+                messageBox.style.backgroundColor = 'rgba(var(--color-warning-rgb), 0.1)';
+                messageBox.style.borderColor = 'var(--color-warning)';
+                messageBox.style.color = 'var(--color-warning)';
+            }
+            messageBox.classList.remove('hidden');
+
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, duration);
+        }
+
+        /**
+         * Formats a Date object to INSEE-MM-DD string.
+         * @param {Date} date
+         * @returns {string}
+         */
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        /**
+         * Gets today's date in INSEE-MM-DD format.
+         * @returns {string}
+         */
+        function getTodayDate() {
+            return formatDate(new Date());
+        }
+
+        /**
+         * Generates a motivational quote. (Could be extended with an API call if needed)
+         * @returns {string}
+         */
+        function getMotivationalQuote() {
+            const quotes = [
+                "The best way to predict the future is to create it.",
+                "Success is the sum of small efforts repeated daily.",
+                "You don't have to be great to start, but you have to start to be great.",
+                "What you do today can improve all your tomorrows.",
+                "Motivation is what gets you started. Habit is what keeps you going.",
+                "The journey of a thousand miles begins with a single step.",
+                "Believe you can and you're halfway there."
+            ];
+            const today = new Date();
+            const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+            return quotes[dayOfYear % quotes.length];
+        }
+
+        /**
+         * Calculates streak for a habit.
+         * @param {object} habit - The habit object.
+         * @param {Date} today - The current date object.
+         * @returns {{current: number, longest: number}}
+         */
+        function calculateStreak(habit, today) {
+            const records = habit.dailyRecords || {};
+            const sortedDates = Object.keys(records).sort().reverse(); // Newest first
+
+            let currentStreak = 0;
+            let longestStreak = 0;
+            let tempStreak = 0;
+
+            let prevDate = null;
+
+            for (const dateStr of sortedDates) {
+                const record = records[dateStr];
+                const recordDate = new Date(dateStr + 'T00:00:00'); // Ensure UTC for consistent comparison
+
+                if (record.status === 'completed' || (record.status !== 'completed' && menstruationDays.includes(dateStr))) {
+                    // It's a completed day OR a protected skipped/not-completed day due to menstruation
+                    if (prevDate === null || (recordDate.getTime() === prevDate.getTime() - (24 * 60 * 60 * 1000))) {
+                        // Consecutive day
+                        tempStreak++;
+                    } else if (recordDate.getTime() < prevDate.getTime() - (24 * 60 * 60 * 1000)) {
+                        // Gap found
+                        longestStreak = Math.max(longestStreak, tempStreak);
+                        tempStreak = 1; // Reset to 1 for this completed day
+                    }
+                } else if (record.status !== 'completed' && !menstruationDays.includes(dateStr)) {
+                    // Not completed and not protected, streak breaks
+                    longestStreak = Math.max(longestStreak, tempStreak);
+                    tempStreak = 0;
+                }
+                prevDate = recordDate;
+
+                // For current streak, only count from today backwards
+                if (formatDate(recordDate) === formatDate(today)) {
+                    if (record.status === 'completed' || (record.status !== 'completed' && menstruationDays.includes(formatDate(today)))) {
+                        currentStreak = tempStreak;
+                    } else {
+                        currentStreak = 0; // If today itself is not completed and not protected
+                    }
+                } else if (recordDate < today && formatDate(recordDate) === formatDate(new Date(today.getTime() - (24 * 60 * 60 * 1000)))) {
+                    // If we've processed today and are now looking at yesterday, update current streak
+                    if (record.status === 'completed' || (record.status !== 'completed' && menstruationDays.includes(formatDate(recordDate)))) {
+                        // Do nothing, currentStreak is already set correctly if today was counted
+                    } else {
+                        currentStreak = 0; // If yesterday was not completed and not protected, current streak is 0
+                    }
+                }
+            }
+            longestStreak = Math.max(longestStreak, tempStreak);
+
+            // Special case: if today is a completion and no previous record, current streak is 1
+            if (records[formatDate(today)] && records[formatDate(today)].status === 'completed' && currentStreak === 0) {
+                 currentStreak = 1;
+            } else if (records[formatDate(today)] && records[formatDate(today)].status !== 'completed' && menstruationDays.includes(formatDate(today)) && currentStreak === 0) {
+                 currentStreak = 1; // If today is protected, it starts a "streak" of 1 protected day
+            }
+
+
+            // Adjust current streak for skipped days correctly
+            // If the last active day was a skipped day and not protected, current streak is 0.
+            // If today is a skipped day and not protected, current streak is 0.
+            if (records[formatDate(today)] && records[formatDate(today)].status === 'skipped' && !menstruationDays.includes(formatDate(today))) {
+                currentStreak = 0;
+            }
+
+
+            return { current: currentStreak, longest: longestStreak };
+        }
+
+
+        /**
+         * Checks if a habit is due on a specific date based on its frequency.
+         * @param {object} habit - The habit object.
+         * @param {Date} date - The date to check against.
+         * @returns {boolean}
+         */
+        function isHabitDue(habit, date) {
+            const habitStartDate = new Date(habit.startDate + 'T00:00:00'); // Ensure UTC
+            if (date < habitStartDate) {
+                return false; // Habit hasn't started yet
+            }
+
+            const dayOfWeekNum = date.getDay(); // 0 for Sunday, 1 for Monday...
+            const dayOfWeekStr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeekNum];
+
+            switch (habit.targetFrequency.type) {
+                case 'daily':
+                    return true;
+                case 'specific_days':
+                    return habit.targetFrequency.value.includes(dayOfWeekStr);
+                case 'x_times_per_week':
+                    // This is more complex and typically checked over a week's period.
+                    // For a single day, we'll assume it's due any day it could be done.
+                    // The 'X times' logic will come into play in daily progress calc.
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        // --- Firebase Initialization ---
+        async function initializeFirebase() {
+            try {
+                // Global variables from Canvas environment
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Assign to global appId
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+                console.log("Initializing Firebase with App ID:", appId); // Debugging
+                console.log("Firebase Config:", firebaseConfig); // Debugging
+
+                if (Object.keys(firebaseConfig).length === 0) {
+                    showMessage("Firebase config not found. Data will not be persisted.", "error", 10000);
+                    console.error("Firebase config is empty. Data persistence will not work.");
+                    appLoadingMessage.textContent = "Error: Firebase not configured. Data will not save.";
+                    return;
+                }
+
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authenticate user
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                console.log("Initial Auth Token:", initialAuthToken ? "Exists" : "Does not exist"); // Debugging
+
+                // Listen for auth state changes BEFORE attempting sign-in
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = `User ID: ${userId}`;
+                        isAuthReady = true;
+                        appLoadingMessage.classList.add('hidden'); // Hide loading message once authenticated
+                        console.log("Firebase initialized and user authenticated:", userId); // Debugging
+                        setupRealtimeListeners(); // Start listening for data once authenticated
+                    } else {
+                        userId = null;
+                        userIdDisplay.textContent = "Not authenticated. Attempting anonymous sign-in...";
+                        isAuthReady = false;
+                        console.log("No user signed in. Attempting anonymous sign-in."); // Debugging
+                        try {
+                            // Try to sign in anonymously if not already signed in
+                            if (!auth.currentUser) {
+                                await signInAnonymously(auth);
+                                console.log("Signed in anonymously."); // Debugging
+                            }
+                        } catch (anonError) {
+                            console.error("Error signing in anonymously:", anonError);
+                            showMessage("Failed to sign in anonymously. Please try refreshing.", "error", 10000);
+                            appLoadingMessage.textContent = "Error: Authentication failed.";
+                        }
+                    }
+                });
+
+                // Initial sign-in attempt (if token exists, use it; otherwise onAuthStateChanged will handle anonymous)
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    // If no token, onAuthStateChanged will eventually call signInAnonymously if needed
+                }
+
+            } catch (error) {
+                console.error("Error initializing Firebase or authenticating:", error);
+                showMessage("Failed to initialize app. Check console for details.", "error", 10000);
+                appLoadingMessage.textContent = "Error: Application initialization failed.";
+            }
+        }
+
+        /**
+         * Sets up real-time listeners for habits and settings.
+         */
+        function setupRealtimeListeners() {
+            if (!isAuthReady || !db || !userId || !appId) { // Check appId here too
+                console.warn("Firestore listeners not started: Auth not ready, userId, or appId missing. IsAuthReady:", isAuthReady, "DB:", !!db, "UserID:", userId, "AppID:", appId); // More debugging
+                return;
+            }
+            console.log("Setting up Firestore listeners for App ID:", appId, "and User ID:", userId); // Debugging
+
+            // Listener for Habits
+            const habitsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/habits`);
+            onSnapshot(habitsCollectionRef, (snapshot) => {
+                const fetchedHabits = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                // Sort habits by custom order if available, otherwise by creation date
+                fetchedHabits.sort((a, b) => (a.order || 0) - (b.order || 0) || (a.createdAt?.toDate() || 0) - (b.createdAt?.toDate() || 0));
+                allHabits = fetchedHabits;
+                console.log("Habits updated:", allHabits);
+                renderHabits();
+                updateCategoryFilterDropdown(); // Update filter options
+                updateDailyProgress();
+            }, (error) => {
+                console.error("Error fetching habits:", error);
+                showMessage("Error loading habits. Please try again.", "error");
+            });
+
+            // Listener for Settings (Category Colors and Menstruation Days)
+            const settingsDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'user_prefs');
+            onSnapshot(settingsDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const settings = docSnap.data();
+                    allCategoryColors = settings.categoryColors || {};
+                    menstruationDays = settings.menstruationDays || [];
+                    console.log("Settings updated:", allCategoryColors, menstruationDays);
+                    renderHabits(); // Re-render habits to apply new colors
+                    renderMonthlyCalendar(currentDisplayedMonth); // Re-render calendar for menstruation days
+                    updateCategorySuggestions(); // Update category datalist
+                    updateCategoryColorPreview(); // Update preview for add/edit modal
+                } else {
+                    // Create default settings if they don't exist
+                    console.log("User settings not found, creating defaults.");
+                    setDoc(settingsDocRef, {
+                        categoryColors: {},
+                        menstruationDays: []
+                    }, {
+                        merge: true
+                    }).then(() => {
+                        console.log("Default settings created.");
+                    }).catch(e => {
+                        console.error("Error creating default settings:", e);
+                    });
+                }
+            }, (error) => {
+                console.error("Error fetching settings:", error);
+                showMessage("Error loading settings. Defaults will be used.", "error");
+            });
+        }
+
+        // --- Habit Operations (CRUD) ---
+
+        /**
+         * Adds a new habit to Firestore.
+         * @param {object} habitData - Data for the new habit.
+         */
+        async function addNewHabit(habitData) {
+            try {
+                // Assign an order based on current number of habits
+                habitData.order = allHabits.length;
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/habits`), {
+                    ...habitData,
+                    createdAt: new Date(),
+                    dailyRecords: {}, // Store daily completion data here
+                    status: 'active'
+                });
+                showMessage("Habit added successfully!", "success");
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage("Error adding habit. Please try again.", "error");
+            }
+        }
+
+        /**
+         * Updates an existing habit in Firestore.
+         * @param {string} habitId - ID of the habit to update.
+         * @param {object} updates - Fields to update.
+         */
+        async function updateExistingHabit(habitId, updates) {
+            try {
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/habits`, habitId), updates);
+                showMessage("Habit updated successfully!", "success");
+            } catch (e) {
+                console.error("Error updating document: ", e);
+                showMessage("Error updating habit. Please try again.", "error");
+            }
+        }
+
+        /**
+         * Deletes a habit from Firestore.
+         * @param {string} habitId - ID of the habit to delete.
+         */
+        async function deleteHabit(habitId) {
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/habits`, habitId));
+                showMessage("Habit deleted successfully!", "success");
+            } catch (e) {
+                console.error("Error deleting habit: ", e);
+                showMessage("Error deleting habit. Please try again.", "error");
+            }
+        }
+
+        /**
+         * Archives/Activates a habit.
+         * @param {string} habitId - ID of the habit.
+         * @param {string} status - 'active' or 'archived'.
+         */
+        async function toggleHabitArchiveStatus(habitId, status) {
+            try {
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/habits`, habitId), {
+                    status: status
+                });
+                showMessage(`Habit ${status === 'archived' ? 'archived' : 'activated'} successfully!`, "success");
+            } catch (e) {
+                console.error("Error changing habit status: ", e);
+                showMessage("Error changing habit status. Please try again.", "error");
+            }
+        }
+
+        /**
+         * Updates a daily record for a habit (completion status/value).
+         * @param {string} habitId - ID of the habit.
+         * @param {string} date - Date in INSEE-MM-DD.
+         * @param {object} record - The daily record object (e.g., {status: 'completed', value: 10}).
+         */
+        async function updateDailyRecord(habitId, date, record) {
+            try {
+                // Use dot notation to update nested map fields
+                const updatePath = `dailyRecords.${date}`;
+                await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/habits`, habitId), {
+                    [updatePath]: record
+                });
+                showMessage("Habit record updated!", "success", 1500);
+            } catch (e) {
+                console.error("Error updating daily record: ", e);
+                showMessage("Error updating daily record. Please try again.", "error");
+            }
+        }
+
+        /**
+         * Updates category colors in Firestore.
+         */
+        async function saveCategoryColors() {
+            try {
+                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'user_prefs'), {
+                    categoryColors: allCategoryColors
+                }, {
+                    merge: true
+                });
+                showMessage("Category colors saved!", "success");
+            } catch (e) {
+                console.error("Error saving category colors:", e);
+                showMessage("Error saving category colors. Please try again.", "error");
+            }
+        }
+
+        /**
+         * Updates menstruation days in Firestore.
+         */
+        async function saveMenstruationDays() {
+            try {
+                await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'user_prefs'), {
+                    menstruationDays: menstruationDays
+                }, {
+                    merge: true
+                });
+                showMessage("Menstruation days saved!", "success");
+            } catch (e) {
+                console.error("Error saving menstruation days:", e);
+                showMessage("Error saving menstruation days. Please try again.", "error");
+            }
+        }
+
+
+        // --- Render Functions ---
+
+        /**
+         * Renders the habits list based on filters and sort options.
+         */
+        function renderHabits() {
+            habitsList.innerHTML = ''; // Clear existing habits
+            const todayDate = getTodayDate();
+
+            let filteredHabits = allHabits.filter(habit => habit.status === 'active'); // Only show active habits by default
+
+            // Apply filter
+            const selectedCategory = categoryFilter.value;
+            if (selectedCategory !== 'all') {
+                filteredHabits = filteredHabits.filter(habit => habit.category === selectedCategory);
+            }
+
+            // Apply sort
+            const selectedSort = sortOption.value;
+            if (selectedSort === 'name') {
+                filteredHabits.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (selectedSort === 'createdAt') {
+                filteredHabits.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+            } else if (selectedSort === 'progress') {
+                // Sort by today's completion status: Completed > Not Completed > Skipped
+                filteredHabits.sort((a, b) => {
+                    const statusA = (a.dailyRecords && a.dailyRecords[todayDate]) ? a.dailyRecords[todayDate].status : null;
+                    const statusB = (b.dailyRecords && b.dailyRecords[todayDate]) ? b.dailyRecords[todayDate].status : null;
+
+                    const getSortValue = (status) => {
+                        if (status === 'completed') return 3;
+                        if (status === 'skipped') return 1;
+                        if (status === 'not_completed') return 2; // Treat explicit not_completed higher than null
+                        return 0; // Null/undefined for not touched
+                    };
+                    return getSortValue(statusB) - getSortValue(statusA);
+                });
+            }
+            // 'order' is handled during initial fetch sort
+
+            if (filteredHabits.length === 0) {
+                noHabitsMessage.classList.remove('hidden');
+                return;
+            } else {
+                noHabitsMessage.classList.add('hidden');
+            }
+
+            filteredHabits.forEach(habit => {
+                const todayRecord = habit.dailyRecords ? habit.dailyRecords[todayDate] : null;
+                const status = todayRecord ? todayRecord.status : 'pending'; // 'completed', 'skipped', 'pending'
+
+                let cardClass = '';
+                if (status === 'completed') {
+                    cardClass = 'completed';
+                } else if (status === 'skipped') {
+                    cardClass = 'skipped';
+                } else if (status === 'pending') {
+                    cardClass = 'not-completed'; // Visually indicate a non-completed habit for today
+                }
+
+                const categoryColor = allCategoryColors[habit.category] || 'var(--color-earthy-gray)'; // Default if no color set
+
+                const habitItem = document.createElement('div');
+                habitItem.id = `habit-${habit.id}`;
+                habitItem.className = `habit-card relative p-5 rounded-xl shadow-md cursor-grab transition duration-200 ease-in-out flex flex-col space-y-3 ${cardClass}`;
+                habitItem.draggable = true;
+                habitItem.dataset.habitId = habit.id;
+
+                let completionControlHtml = '';
+                if (habit.habitType === 'binary') {
+                    const isChecked = status === 'completed';
+                    completionControlHtml = `
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" data-habit-id="${habit.id}" data-habit-type="binary" class="habit-completion-checkbox h-6 w-6 rounded-full text-green-600 border-gray-300 focus:ring-green-500" ${isChecked ? 'checked' : ''}>
+                            <span class="text-xl font-semibold ${isChecked ? 'line-through text-gray-600' : ''}" style="color: var(--color-black);">${habit.name}</span>
+                        </label>
+                    `;
+                } else { // Quantitative or Duration
+                    const value = todayRecord && todayRecord.value !== undefined ? todayRecord.value : '';
+                    completionControlHtml = `
+                        <div class="flex flex-col space-y-2">
+                            <label class="text-xl font-semibold ${status === 'completed' ? 'line-through text-gray-600' : ''}" style="color: var(--color-black);">${habit.name}</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="number"
+                                       data-habit-id="${habit.id}"
+                                       data-habit-type="${habit.habitType}"
+                                       class="habit-completion-input flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                                       placeholder="Value"
+                                       value="${value}"
+                                       min="0"
+                                       step="any"
+                                       style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray); color: var(--color-black);">
+                                <span class="text-lg" style="color: var(--color-black);">${habit.unit || ''}</span>
+                                <button data-habit-id="${habit.id}" data-habit-type="${habit.habitType}" class="save-value-btn btn-primary px-3 py-1 text-sm"><i class="fas fa-check"></i></button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                habitItem.innerHTML = `
+                    <div class="absolute top-2 right-2 text-xl cursor-move text-gray-400 opacity-50 drag-handle">
+                        <i class="fas fa-grip-vertical"></i>
+                    </div>
+                    <div class="flex items-center space-x-3 mb-2">
+                        <span class="text-3xl">${habit.icon || '🎯'}</span>
+                        <div class="category-color-circle" style="background-color: ${categoryColor};"></div>
+                    </div>
+                    ${completionControlHtml}
+                    <div class="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
+                        <button data-habit-id="${habit.id}" data-habit-type="${habit.habitType}" class="mark-skipped-btn btn-secondary px-3 py-1 text-sm ${status === 'skipped' ? 'bg-orange-500 hover:bg-orange-600' : ''}" style="background-color: ${status === 'skipped' ? 'var(--color-skipped)' : 'var(--color-earthy-gray)'};">
+                            ${status === 'skipped' ? 'Unskip' : 'Skipped'}
+                        </button>
+                        <button data-habit-id="${habit.id}" class="view-details-btn btn-secondary px-3 py-1 text-sm">Details</button>
+                    </div>
+                `;
+                habitsList.appendChild(habitItem);
+            });
+
+            addDragAndDropListeners();
+            addDailyInteractionListeners();
+            addViewDetailsListeners();
+        }
+
+        /**
+         * Updates the daily progress bar and text.
+         */
+        function updateDailyProgress() {
+            const todayDate = getTodayDate();
+            let completedCount = 0;
+            let totalActiveHabits = 0;
+
+            allHabits.filter(h => h.status === 'active').forEach(habit => {
+                const todayRecord = habit.dailyRecords ? habit.dailyRecords[todayDate] : null;
+                const isDueToday = isHabitDue(habit, new Date()); // Check if habit is due today
+
+                if (isDueToday) {
+                    totalActiveHabits++;
+                    if (todayRecord && todayRecord.status === 'completed') {
+                        completedCount++;
+                    }
+                }
+            });
+
+            const percentage = totalActiveHabits > 0 ? Math.round((completedCount / totalActiveHabits) * 100) : 0;
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `${percentage}% Completed (${completedCount}/${totalActiveHabits})`;
+        }
+
+
+        /**
+         * Renders the monthly calendar.
+         * @param {Date} date - A Date object representing the month to display.
+         */
+        function renderMonthlyCalendar(date) {
+            calendarGrid.innerHTML = '';
+            const year = date.getFullYear();
+            const month = date.getMonth(); // 0-indexed
+
+            currentMonthYearEl.textContent = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const firstDayOfMonth = new Date(year, month, 1);
+            const lastDayOfMonth = new Date(year, month + 1, 0);
+            const numDaysInMonth = lastDayOfMonth.getDate();
+
+            // Add empty cells for days before the 1st
+            const startDayOfWeek = firstDayOfMonth.getDay(); // 0 for Sunday
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'p-2 text-center text-gray-400 bg-gray-100 rounded-md';
+                emptyCell.style.backgroundColor = 'var(--color-very-light-gray)';
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            // Add day cells
+            for (let day = 1; day <= numDaysInMonth; day++) {
+                const currentDayDate = new Date(year, month, day);
+                const dateString = formatDate(currentDayDate);
+                const isToday = dateString === getTodayDate();
+                const isMenstruationDay = menstruationDays.includes(dateString);
+
+                const dayCell = document.createElement('div');
+                dayCell.className = `calendar-day p-2 text-center border rounded-md relative flex flex-col justify-between items-center text-sm ${isToday ? 'border-2 border-black font-bold' : 'border-gray-200'}`;
+                dayCell.style.backgroundColor = 'var(--color-light-cream)';
+                dayCell.style.borderColor = isToday ? 'var(--color-black)' : 'var(--color-earthy-gray)';
+                dayCell.style.color = 'var(--color-black)';
+
+                if (isMenstruationDay) {
+                    dayCell.classList.add('menstruation-day');
+                }
+
+                dayCell.innerHTML = `
+                    <span class="text-lg mb-1">${day}</span>
+                    ${isMenstruationDay ? '<i class="fas fa-tint text-pink-500 text-lg absolute bottom-1 right-1"></i>' : ''}
+                `;
+                dayCell.dataset.date = dateString;
+                dayCell.addEventListener('click', () => handleCalendarDayClick(dayCell, dateString));
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+
+        /**
+         * Renders the details calendar within the habit details modal.
+         * @param {object} habit - The habit object.
+         */
+        function renderHabitDetailsCalendar(habit) {
+            detailsCalendarGrid.innerHTML = '';
+            const records = habit.dailyRecords || {};
+
+            // Add day names
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayNames.forEach(name => {
+                const dayNameEl = document.createElement('div');
+                dayNameEl.className = 'text-center font-semibold text-gray-600 p-1';
+                dayNameEl.style.color = 'var(--color-earthy-gray)';
+                detailsCalendarGrid.appendChild(dayNameEl);
+            });
+
+            // Get month and year for display
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+            const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+            const numDaysInMonth = lastDayOfMonth.getDate();
+
+            // Add empty cells for days before the 1st
+            const startDayOfWeek = firstDayOfMonth.getDay(); // 0 for Sunday
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'p-2 text-center text-gray-400 bg-gray-100 rounded-md';
+                emptyCell.style.backgroundColor = 'var(--color-very-light-gray)';
+                detailsCalendarGrid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= numDaysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dateString = formatDate(date);
+                const record = records[dateString];
+                const isCompleted = record && record.status === 'completed';
+                const isSkipped = record && record.status === 'skipped';
+                const isDue = isHabitDue(habit, date); // Check if the habit was due on this day
+
+                let cellClass = 'p-2 text-center rounded-sm text-gray-700';
+                let backgroundColor = 'var(--color-very-light-gray)';
+                let textColor = 'var(--color-black)';
+                let tooltip = '';
+
+                if (isCompleted) {
+                    backgroundColor = 'var(--color-success)';
+                    textColor = 'white';
+                    tooltip = 'Completed';
+                } else if (isSkipped) {
+                    backgroundColor = 'var(--color-skipped)';
+                    textColor = 'white';
+                    tooltip = 'Skipped';
+                } else if (isDue) {
+                    backgroundColor = 'var(--color-warning)'; // Due but not completed/skipped
+                    textColor = 'white';
+                    tooltip = 'Missed';
+                } else {
+                    backgroundColor = 'var(--color-very-light-gray)';
+                    textColor = 'var(--color-black)';
+                    tooltip = 'Not Due / No Record';
+                }
+
+                if (formatDate(date) === getTodayDate()) {
+                    cellClass += ' border-2 border-black';
+                }
+
+                const dayCell = document.createElement('div');
+                dayCell.className = cellClass;
+                dayCell.style.backgroundColor = backgroundColor;
+                dayCell.style.color = textColor;
+                dayCell.title = tooltip; // Add tooltip for status
+
+                dayCell.textContent = day;
+                detailsCalendarGrid.appendChild(dayCell);
+            }
+        }
+
+
+        /**
+         * Populates the category filter dropdown with unique categories from habits.
+         */
+        function updateCategoryFilterDropdown() {
+            categoryFilter.innerHTML = '<option value="all">Filter by Category</option>';
+            const uniqueCategories = [...new Set(allHabits.map(h => h.category))].filter(c => c); // Get unique non-empty categories
+            uniqueCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categoryFilter.appendChild(option);
+            });
+            // Preserve selected filter if it still exists
+            if (categoryFilter.dataset.selected && uniqueCategories.includes(categoryFilter.dataset.selected)) {
+                categoryFilter.value = categoryFilter.dataset.selected;
+            } else {
+                categoryFilter.value = 'all';
+                categoryFilter.dataset.selected = 'all';
+            }
+        }
+
+        /**
+         * Populates the category suggestions datalist.
+         */
+        function updateCategorySuggestions() {
+            categorySuggestionsDatalist.innerHTML = '';
+            const uniqueCategories = [...new Set(allHabits.map(h => h.category))].filter(c => c);
+            uniqueCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                categorySuggestionsDatalist.appendChild(option);
+            });
+        }
+
+        /**
+         * Renders the category color settings in the modal.
+         */
+        function renderCategoryColorSettings() {
+            categoryColorList.innerHTML = '';
+            const uniqueCategories = [...new Set(allHabits.map(h => h.category))].filter(c => c);
+
+            if (uniqueCategories.length === 0) {
+                noCategoriesMessage.classList.remove('hidden');
+                return;
+            } else {
+                noCategoriesMessage.classList.add('hidden');
+            }
+
+            uniqueCategories.forEach(category => {
+                const currentColor = allCategoryColors[category] || '#A0AEC0'; // Default gray
+
+                const categoryRow = document.createElement('div');
+                categoryRow.className = 'flex items-center justify-between p-3 border-b border-gray-200';
+                categoryRow.innerHTML = `
+                    <span class="font-medium text-lg" style="color: var(--color-black);">${category}</span>
+                    <div class="color-picker-grid">
+                        <!-- Color options will be inserted here -->
+                    </div>
+                `;
+
+                const colorGrid = categoryRow.querySelector('.color-picker-grid');
+                const colors = [
+                    '#BE5B50', '#537D5D', '#B6B09F', '#000000', '#6A5ACD', '#8A2D3B', '#D2B48C', '#C0C0C0',
+                    '#FFD700', '#ADFF2F', '#00CED1', '#FF69B4', '#DA70D6', '#4682B4', '#DDA0DD', '#F08080',
+                    '#CD853F', '#F5DEB3', '#9ACD32', '#6B8E23', '#40E0D0', '#FFA07A', '#EE82EE', '#7B68EE'
+                ]; // Example palette
+
+                colors.forEach(color => {
+                    const colorItem = document.createElement('div');
+                    colorItem.className = `color-picker-item ${currentColor === color ? 'selected' : ''}`;
+                    colorItem.style.backgroundColor = color;
+                    colorItem.dataset.color = color;
+                    colorItem.addEventListener('click', () => {
+                        // Deselect previous color in this row
+                        categoryRow.querySelectorAll('.color-picker-item').forEach(item => item.classList.remove('selected'));
+                        // Select current
+                        colorItem.classList.add('selected');
+                        allCategoryColors[category] = color; // Update global state
+                    });
+                    colorGrid.appendChild(colorItem);
+                });
+
+                categoryColorList.appendChild(categoryRow);
+            });
+        }
+
+        // --- Event Handlers & Listeners ---
+
+        /**
+         * Handles the display of frequency options in the habit modal.
+         */
+        function handleFrequencyTypeChange() {
+            frequencyXTimesDiv.classList.add('hidden');
+            frequencySpecificDaysDiv.classList.add('hidden');
+            if (frequencyTypeSelect.value === 'x_times_per_week') {
+                frequencyXTimesDiv.classList.remove('hidden');
+            } else if (frequencyTypeSelect.value === 'specific_days') {
+                frequencySpecificDaysDiv.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Handles the display of unit selection based on habit type.
+         */
+        function handleHabitTypeChange() {
+            if (habitTypeSelect.value === 'quantitative' || habitTypeSelect.value === 'duration') {
+                unitSelectionDiv.classList.remove('hidden');
+            } else {
+                unitSelectionDiv.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Updates the category color preview circle in the habit modal.
+         */
+        function updateCategoryColorPreview() {
+            const currentCategory = habitCategoryInput.value;
+            const color = allCategoryColors[currentCategory] || '#A0AEC0'; // Default gray if not found
+            categoryColorPreview.style.backgroundColor = color;
+        }
+
+        /**
+         * Handles form submission for adding/editing habits.
+         * @param {Event} event
+         */
+        async function handleHabitFormSubmit(event) {
+            event.preventDefault();
+            if (!isAuthReady) {
+                showMessage("App not ready. Please wait.", "info");
+                return;
+            }
+
+            const habitData = {
+                name: habitNameInput.value.trim(),
+                startDate: habitStartDateInput.value,
+                category: habitCategoryInput.value.trim(),
+                goal: habitGoalInput.value.trim(),
+                habitType: habitTypeSelect.value,
+                icon: habitIconSelect.value,
+            };
+
+            // Frequency data
+            if (frequencyTypeSelect.value === 'x_times_per_week') {
+                habitData.targetFrequency = {
+                    type: 'x_times_per_week',
+                    value: parseInt(frequencyXValueInput.value)
+                };
+            } else if (frequencyTypeSelect.value === 'specific_days') {
+                const selectedDays = Array.from(specificDaysCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+                if (selectedDays.length === 0) {
+                    showMessage("Please select at least one day for specific days frequency.", "error");
+                    return;
+                }
+                habitData.targetFrequency = {
+                    type: 'specific_days',
+                    value: selectedDays
+                };
+            } else { // Daily
+                habitData.targetFrequency = {
+                    type: 'daily',
+                    value: null
+                };
+            }
+
+            // Unit data for quantitative/duration habits
+            if (habitData.habitType === 'quantitative' || habitData.habitType === 'duration') {
+                habitData.unit = habitUnitSelect.value;
+            } else {
+                habitData.unit = null;
+            }
+
+            if (currentEditingHabitId) {
+                await updateExistingHabit(currentEditingHabitId, habitData);
+            } else {
+                await addNewHabit(habitData);
+            }
+            closeModal(habitModal);
+        }
+
+        /**
+         * Opens the habit modal for adding or editing.
+         * @param {string|null} habitId - ID of habit to edit, or null for new.
+         */
+        async function openHabitModal(habitId = null) {
+            currentEditingHabitId = habitId;
+            habitForm.reset();
+            handleFrequencyTypeChange(); // Reset frequency display
+            handleHabitTypeChange(); // Reset unit display
+            updateCategorySuggestions(); // Update datalist
+            updateCategoryColorPreview(); // Update preview
+
+            if (habitId) {
+                habitModalTitle.textContent = 'Edit Habit';
+                deleteHabitBtn.classList.remove('hidden');
+                archiveHabitBtn.classList.remove('hidden');
+
+                const habitToEdit = allHabits.find(h => h.id === habitId);
+                if (habitToEdit) {
+                    habitNameInput.value = habitToEdit.name;
+                    habitStartDateInput.value = habitToEdit.startDate;
+                    frequencyTypeSelect.value = habitToEdit.targetFrequency.type;
+                    handleFrequencyTypeChange(); // Update display based on selected type
+
+                    if (habitToEdit.targetFrequency.type === 'x_times_per_week') {
+                        frequencyXValueInput.value = habitToEdit.targetFrequency.value;
+                    } else if (habitToEdit.targetFrequency.type === 'specific_days') {
+                        specificDaysCheckboxes.forEach(cb => {
+                            cb.checked = habitToEdit.targetFrequency.value.includes(cb.value);
+                        });
+                    }
+
+                    habitCategoryInput.value = habitToEdit.category;
+                    habitGoalInput.value = habitToEdit.goal;
+                    habitTypeSelect.value = habitToEdit.habitType;
+                    handleHabitTypeChange(); // Update display based on selected type
+                    if (habitToEdit.unit) {
+                        habitUnitSelect.value = habitToEdit.unit;
+                    }
+                    habitIconSelect.value = habitToEdit.icon || '🎯'; // Default icon
+                    updateCategoryColorPreview();
+
+                    // Set archive button text/action
+                    if (habitToEdit.status === 'archived') {
+                        archiveHabitBtn.textContent = 'Activate Habit';
+                        archiveHabitBtn.onclick = () => toggleHabitArchiveStatus(habitId, 'active');
+                    } else {
+                        archiveHabitBtn.textContent = 'Archive Habit';
+                        archiveHabitBtn.onclick = () => toggleHabitArchiveStatus(habitId, 'archived');
+                    }
+
+                }
+            } else {
+                habitModalTitle.textContent = 'Add New Habit';
+                deleteHabitBtn.classList.add('hidden');
+                archiveHabitBtn.classList.add('hidden');
+                habitStartDateInput.value = getTodayDate(); // Default to today
+            }
+            habitModal.classList.remove('hidden');
+        }
+
+        /**
+         * Closes a given modal.
+         * @param {HTMLElement} modalElement
+         */
+        function closeModal(modalElement) {
+            modalElement.classList.add('hidden');
+        }
+
+
+        // --- Daily Interaction Listeners (Checkbox, Input, Skipped) ---
+        function addDailyInteractionListeners() {
+            habitsList.querySelectorAll('.habit-completion-checkbox').forEach(checkbox => {
+                checkbox.onchange = async (event) => {
+                    if (!isAuthReady) {
+                        showMessage("App not ready. Please wait.", "info");
+                        event.preventDefault(); // Prevent checkbox state change
+                        return;
+                    }
+                    const habitId = event.target.dataset.habitId;
+                    const date = getTodayDate();
+                    const status = event.target.checked ? 'completed' : 'pending';
+                    await updateDailyRecord(habitId, date, {
+                        status: status
+                    });
+                };
+            });
+
+            habitsList.querySelectorAll('.save-value-btn').forEach(button => {
+                button.onclick = async (event) => {
+                    if (!isAuthReady) {
+                        showMessage("App not ready. Please wait.", "info");
+                        return;
+                    }
+                    const habitId = event.target.dataset.habitId;
+                    const inputEl = button.previousElementSibling.previousElementSibling; // Input is sibling
+                    const value = parseFloat(inputEl.value);
+                    const date = getTodayDate();
+
+                    if (isNaN(value) || value < 0) {
+                        showMessage("Please enter a valid positive number.", "error");
+                        return;
+                    }
+
+                    // Check if the habit exists and is quantitative/duration to set 'completed' status
+                    const habit = allHabits.find(h => h.id === habitId);
+                    let status = 'pending';
+                    if (habit && (habit.habitType === 'quantitative' || habit.habitType === 'duration')) {
+                        // For quantitative habits, entering a value implies completion
+                        status = 'completed';
+                    }
+
+                    await updateDailyRecord(habitId, date, {
+                        value: value,
+                        status: status
+                    });
+                };
+            });
+
+            habitsList.querySelectorAll('.mark-skipped-btn').forEach(button => {
+                button.onclick = async (event) => {
+                    if (!isAuthReady) {
+                        showMessage("App not ready. Please wait.", "info");
+                        return;
+                    }
+                    const habitId = event.target.dataset.habitId;
+                    const todayRecord = allHabits.find(h => h.id === habitId).dailyRecords?.[getTodayDate()];
+                    const currentStatus = todayRecord ? todayRecord.status : 'pending';
+                    const date = getTodayDate();
+
+                    let newStatus = 'pending'; // Default to pending if unskipped
+                    if (currentStatus !== 'skipped') {
+                        newStatus = 'skipped';
+                    }
+
+                    await updateDailyRecord(habitId, date, {
+                        status: newStatus,
+                        value: (todayRecord && todayRecord.value !== undefined) ? todayRecord.value : null // Preserve value if exists
+                    });
+                };
+            });
+        }
+
+        // --- Drag and Drop Logic ---
+        let draggedItem = null;
+
+        function addDragAndDropListeners() {
+            const habitCards = habitsList.querySelectorAll('.habit-card');
+
+            habitCards.forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    draggedItem = card;
+                    setTimeout(() => card.classList.add('dragging'), 0);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                    draggedItem = null;
+                });
+
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault(); // Necessary to allow drop
+                    const targetCard = e.currentTarget;
+                    if (targetCard === draggedItem) return;
+
+                    const boundingBox = targetCard.getBoundingClientRect();
+                    const offset = e.clientY - boundingBox.top;
+                    const isBefore = offset < boundingBox.height / 2;
+
+                    // Remove existing drop target indicators
+                    habitsList.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+
+                    if (isBefore) {
+                        targetCard.classList.add('drop-target'); // Add indicator
+                        targetCard.style.borderTop = '2px dashed var(--color-black)';
+                        targetCard.style.borderBottom = 'none';
+                    } else {
+                        targetCard.classList.add('drop-target'); // Add indicator
+                        targetCard.style.borderBottom = '2px dashed var(--color-black)';
+                        targetCard.style.borderTop = 'none';
+                    }
+                });
+
+                card.addEventListener('dragleave', (e) => {
+                    e.currentTarget.classList.remove('drop-target');
+                    e.currentTarget.style.borderTop = 'none';
+                    e.currentTarget.style.borderBottom = 'none';
+                });
+
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const dropTarget = e.currentTarget;
+
+                    dropTarget.classList.remove('drop-target');
+                    dropTarget.style.borderTop = 'none';
+                    dropTarget.style.borderBottom = 'none';
+
+                    if (draggedItem && draggedItem !== dropTarget) {
+                        const allActiveHabits = Array.from(habitsList.children);
+                        const draggedIndex = allActiveHabits.indexOf(draggedItem);
+                        let targetIndex = allActiveHabits.indexOf(dropTarget);
+
+                        const boundingBox = dropTarget.getBoundingClientRect();
+                        const offset = e.clientY - boundingBox.top;
+                        const isBefore = offset < boundingBox.height / 2;
+
+                        if (draggedIndex < targetIndex) {
+                            if (isBefore) {
+                                targetIndex--; // If dragging downwards and dropping before target
+                            }
+                        } else if (draggedIndex > targetIndex) {
+                            if (!isBefore) {
+                                targetIndex++; // If dragging upwards and dropping after target
+                            }
+                        }
+
+                        // Reorder the DOM elements
+                        if (draggedIndex < targetIndex) {
+                            habitsList.insertBefore(draggedItem, allActiveHabits[targetIndex].nextSibling);
+                        } else {
+                            habitsList.insertBefore(draggedItem, allActiveHabits[targetIndex]);
+                        }
+
+                        // Update 'order' field in Firestore for all habits based on new DOM order
+                        updateHabitOrderInFirestore();
+                    }
+                });
+            });
+        }
+
+        /**
+         * Updates the 'order' field for all habits in Firestore after a drag-and-drop reorder.
+         */
+        async function updateHabitOrderInFirestore() {
+            if (!isAuthReady || !db) return;
+
+            const orderedHabitIds = Array.from(habitsList.children).map(card => card.dataset.habitId);
+            const batch = db.batch();
+
+            orderedHabitIds.forEach((id, index) => {
+                const habitRef = doc(db, `artifacts/${appId}/users/${userId}/habits`, id);
+                batch.update(habitRef, {
+                    order: index
+                });
+            });
+
+            try {
+                await batch.commit();
+                showMessage("Habit order saved!", "success", 1500);
+            } catch (error) {
+                console.error("Error updating habit order:", error);
+                showMessage("Failed to save habit order.", "error");
+            }
+        }
+
+
+        // --- Details Modal Listeners ---
+        function addViewDetailsListeners() {
+            habitsList.querySelectorAll('.view-details-btn').forEach(button => {
+                button.onclick = () => {
+                    const habitId = button.dataset.habitId;
+                    const habit = allHabits.find(h => h.id === habitId);
+                    if (habit) {
+                        displayHabitDetails(habit);
+                    }
+                };
+            });
+        }
+
+        /**
+         * Populates and displays the habit details modal.
+         * @param {object} habit - The habit object to display details for.
+         */
+        function displayHabitDetails(habit) {
+            detailsHabitNameEl.textContent = habit.name;
+            detailsHabitTypeEl.textContent = habit.habitType + (habit.unit ? ` (${habit.unit})` : '');
+            detailsHabitCategoryEl.textContent = habit.category;
+            detailsHabitCategoryEl.style.color = allCategoryColors[habit.category] || 'var(--color-black)';
+            detailsHabitGoalEl.textContent = habit.goal;
+
+            let freqText = '';
+            if (habit.targetFrequency.type === 'daily') {
+                freqText = 'Daily';
+            } else if (habit.targetFrequency.type === 'x_times_per_week') {
+                freqText = `${habit.targetFrequency.value} times per week`;
+            } else if (habit.targetFrequency.type === 'specific_days') {
+                freqText = `On ${habit.targetFrequency.value.join(', ')}`;
+            }
+            detailsHabitFrequencyEl.textContent = freqText;
+
+            const today = new Date();
+            const { current, longest } = calculateStreak(habit, today);
+            currentStreakEl.textContent = current;
+            longestStreakEl.textContent = longest;
+
+            renderHabitDetailsCalendar(habit);
+
+            habitDetailsModal.classList.remove('hidden');
+        }
+
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase();
+            motivationalQuoteEl.textContent = getMotivationalQuote(); // Set initial quote
+
+            // Event Listeners for UI
+            addNewHabitBtn.addEventListener('click', () => openHabitModal());
+            cancelHabitBtn.addEventListener('click', () => closeModal(habitModal));
+            habitForm.addEventListener('submit', handleHabitFormSubmit);
+            deleteHabitBtn.addEventListener('click', () => {
+                if (currentEditingHabitId) {
+                    deleteHabit(currentEditingHabitId);
+                    closeModal(habitModal);
+                }
+            });
+
+            // Frequency and Type dropdown listeners
+            frequencyTypeSelect.addEventListener('change', handleFrequencyTypeChange);
+            habitTypeSelect.addEventListener('change', handleHabitTypeChange);
+            habitCategoryInput.addEventListener('input', updateCategoryColorPreview);
+
+            // Category Color Modal Listeners
+            editCategoryColorsBtn.addEventListener('click', () => {
+                renderCategoryColorSettings();
+                categoryColorModal.classList.remove('hidden');
+            });
+            saveCategoryColorsBtn.addEventListener('click', () => {
+                saveCategoryColors();
+                closeModal(categoryColorModal);
+                renderHabits(); // Re-render habits to apply updated colors immediately
+            });
+
+            // Details Modal Listeners
+            closeDetailsModalBtn.addEventListener('click', () => closeModal(habitDetailsModal));
+
+            // Calendar Navigation
+            prevMonthBtn.addEventListener('click', () => {
+                currentDisplayedMonth.setMonth(currentDisplayedMonth.getMonth() - 1);
+                renderMonthlyCalendar(currentDisplayedMonth);
+            });
+            nextMonthBtn.addEventListener('click', () => {
+                currentDisplayedMonth.setMonth(currentDisplayedMonth.getMonth() + 1);
+                renderMonthlyCalendar(currentDisplayedMonth);
+            });
+
+            // Menstruation Mode Toggle
+            menstruationModeToggle.addEventListener('click', () => {
+                isMenstruationMode = !isMenstruationMode;
+                if (isMenstruationMode) {
+                    showMessage("Menstruation logging mode activated. Click days to mark/unmark.", "info", 5000);
+                    menstruationModeToggle.classList.add('bg-pink-200'); // Visual feedback
+                } else {
+                    showMessage("Menstruation logging mode deactivated.", "info");
+                    menstruationModeToggle.classList.remove('bg-pink-200');
+                }
+            });
+
+            // Filtering and Sorting
+            categoryFilter.addEventListener('change', () => {
+                categoryFilter.dataset.selected = categoryFilter.value; // Store selected value
+                renderHabits();
+            });
+            sortOption.addEventListener('change', renderHabits);
+
+            // Initial render of calendar
+            renderMonthlyCalendar(currentDisplayedMonth);
+        });
+
+        /**
+         * Handles clicking on a day in the monthly calendar for menstruation logging.
+         * @param {HTMLElement} dayCell - The clicked day cell element.
+         * @param {string} dateString - The date in INSEE-MM-DD format.
+         */
+        async function handleCalendarDayClick(dayCell, dateString) {
+            if (!isAuthReady) {
+                showMessage("App not ready. Please wait.", "info");
+                return;
+            }
+            if (isMenstruationMode) {
+                if (menstruationDays.includes(dateString)) {
+                    // Unmark
+                    menstruationDays = menstruationDays.filter(d => d !== dateString);
+                    dayCell.classList.remove('menstruation-day');
+                    // Remove icon
+                    const icon = dayCell.querySelector('.fa-tint');
+                    if (icon) icon.remove();
+                    showMessage(`Unmarked ${dateString} as menstruation day.`, "info", 1500);
+                } else {
+                    // Mark
+                    menstruationDays.push(dateString);
+                    dayCell.classList.add('menstruation-day');
+                    // Add icon
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-tint text-pink-500 text-lg absolute bottom-1 right-1';
+                    dayCell.appendChild(icon);
+                    showMessage(`Marked ${dateString} as menstruation day.`, "success", 1500);
+                }
+                await saveMenstruationDays(); // Save updated list to Firestore
+            } else {
+                // If not in menstruation mode, maybe show daily habits for that day (future enhancement)
+                // For now, just a message
+                showMessage(`Clicked ${dateString}. Toggle menstruation log to mark days.`, "info", 2000);
+            }
+        }
+    </script>
+</body>
+</html>
