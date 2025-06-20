@@ -1102,26 +1102,26 @@
                     completionControlHtml = `
                         <label class="flex items-center space-x-2 cursor-pointer">
                             <input type="checkbox" data-habit-id="${habit.id}" data-habit-type="binary" class="habit-completion-checkbox h-6 w-6 rounded-full text-green-600 border-gray-300 focus:ring-green-500" ${isChecked ? 'checked' : ''}>
-                            <span class="text-xl font-semibold ${isChecked ? 'line-through text-gray-600' : ''}" style="color: var(--color-black);">${habit.name}</span>
+                            <span class="text-xl font-semibold ${isChecked ? 'line-through text-gray-600' : ''} truncate flex-shrink-0" style="color: var(--color-black);">${habit.name}</span>
                         </label>
                     `;
                 } else { // Quantitative or Duration
                     const value = todayRecord && todayRecord.value !== undefined ? todayRecord.value : '';
                     completionControlHtml = `
                         <div class="flex flex-col space-y-2">
-                            <label class="text-xl font-semibold ${status === 'completed' ? 'line-through text-gray-600' : ''}" style="color: var(--color-black);">${habit.name}</label>
-                            <div class="flex items-center space-x-2">
+                            <label class="text-xl font-semibold ${status === 'completed' ? 'line-through text-gray-600' : ''} truncate flex-shrink-0" style="color: var(--color-black);">${habit.name}</label>
+                            <div class="flex items-center space-x-2 w-full flex-wrap">
                                 <input type="number"
                                        data-habit-id="${habit.id}"
                                        data-habit-type="${habit.habitType}"
-                                       class="habit-completion-input flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+                                       class="habit-completion-input w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black min-w-0"
                                        placeholder="Value"
                                        value="${value}"
                                        min="0"
                                        step="any"
                                        style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray); color: var(--color-black);">
-                                <span class="text-lg" style="color: var(--color-black);">${habit.unit || ''}</span>
-                                <button data-habit-id="${habit.id}" data-habit-type="${habit.habitType}" class="save-value-btn btn-primary px-3 py-1 text-sm"><i class="fas fa-check"></i></button>
+                                <span class="text-lg flex-shrink-0" style="color: var(--color-black);">${habit.unit || ''}</span>
+                                <button data-habit-id="${habit.id}" data-habit-type="${habit.habitType}" class="save-value-btn btn-primary px-3 py-1 text-sm flex-shrink-0"><i class="fas fa-check"></i></button>
                             </div>
                         </div>
                     `;
