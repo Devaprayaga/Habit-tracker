@@ -388,10 +388,10 @@
                     <select id="habitIcon" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-black text-2xl" style="border-color: var(--color-earthy-gray); background-color: var(--color-very-light-gray);">
                         <option value="💪">💪 Strength</option>
                         <option value="💧">💧 Water</option>
-                        <option value="�">📚 Read</option>
+                        <option value="📚">📚 Read</option>
                         <option value="🧘‍♀️">🧘‍♀️ Meditate</option>
                         <option value="🏃‍♂️">🏃‍♂️ Run</option>
-                        <option value="🍎">🍎 Healthy Food</option>
+                        <option value=" ">🍎 Healthy Food</option>
                         <option value="😴">😴 Sleep</option>
                         <option value="✍️">✍️ Write</option>
                         <option value="🧹">🧹 Clean</option>
@@ -475,7 +475,7 @@
                 <button type="button" id="editHabitFromDetailsBtn" class="btn-primary">
                     <i class="fas fa-edit mr-2"></i> Edit Habit
                 </button>
-                <button type="button" id="closeDetailsModalBtn" class="btn-secondary">Close</button>
+                <button type="button" id="closeDetailsModalBtn" class="btn-primary">Close</button>
             </div>
         </div>
     </div>
@@ -772,7 +772,16 @@
             try {
                 // Global variables from Canvas environment
                 appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // Assign to global appId
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                const firebaseConfig = {
+                    apiKey: "AIzaSyC9_WAti6ISDw9Suvs1E0o01nDFPF4UL7Q",
+                    authDomain: "my-habit-tracker-30006.firebaseapp.com",
+                    projectId: "my-habit-tracker-30006",
+                    storageBucket: "my-habit-tracker-30006.firebasestorage.app",
+                    messagingSenderId: "219365231052",
+                    appId: "1:219365231052:web:8ca1fcec8cd069c9a1b569",
+                    measurementId: "G-HFL7NDML91"
+                };
+
 
                 console.log("Initializing Firebase with App ID:", appId); // Debugging
                 console.log("Firebase Config:", firebaseConfig); // Debugging
@@ -1236,7 +1245,7 @@
                 detailsCalendarGrid.appendChild(dayNameEl);
             });
 
-            // Get month and year for display (for simplicity, show current month in details calendar)
+            // Get month and year for display
             const today = new Date();
             const currentYear = today.getFullYear();
             const currentMonth = today.getMonth();
@@ -1275,8 +1284,8 @@
                     backgroundColor = 'var(--color-skipped)';
                     textColor = 'white';
                     tooltip = 'Skipped';
-                } else if (isDue && !isCompleted && !isSkipped) { // Only mark as missed if due and not completed/skipped
-                    backgroundColor = 'var(--color-warning)';
+                } else if (isDue) {
+                    backgroundColor = 'var(--color-warning)'; // Due but not completed/skipped
                     textColor = 'white';
                     tooltip = 'Missed';
                 } else {
@@ -1527,16 +1536,10 @@
                     // Set archive button text/action
                     if (habitToEdit.status === 'archived') {
                         archiveHabitBtn.textContent = 'Activate Habit';
-                        archiveHabitBtn.onclick = () => {
-                            toggleHabitArchiveStatus(habitId, 'active');
-                            closeModal(habitModal); // Close modal after action
-                        };
+                        archiveHabitBtn.onclick = () => toggleHabitArchiveStatus(habitId, 'active');
                     } else {
                         archiveHabitBtn.textContent = 'Archive Habit';
-                        archiveHabitBtn.onclick = () => {
-                            toggleHabitArchiveStatus(habitId, 'archived');
-                            closeModal(habitModal); // Close modal after action
-                        };
+                        archiveHabitBtn.onclick = () => toggleHabitArchiveStatus(habitId, 'archived');
                     }
 
                 }
@@ -1825,12 +1828,10 @@
 
             // Details Modal Listeners
             closeDetailsModalBtn.addEventListener('click', () => closeModal(habitDetailsModal));
-            // NEW: Edit button inside details modal
             editHabitFromDetailsBtn.addEventListener('click', () => {
                 closeModal(habitDetailsModal); // Close details modal
                 openHabitModal(currentEditingHabitId); // Open edit modal for the same habit
             });
-
 
             // Calendar Navigation
             prevMonthBtn.addEventListener('click', () => {
