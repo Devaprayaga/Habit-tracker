@@ -127,6 +127,7 @@
 
         /* Habit card specific styling */
         .habit-card {
+            background-color: var(--color-light-cream);
             color: var(--color-black);
             border-radius: 0.75rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
@@ -623,26 +624,6 @@
         }
 
         /**
-         * Lightens a hex color by a given percentage.
-         * @param {string} hex - The hex color code (e.g., '#RRGGBB').
-         * @param {number} percent - The percentage to lighten by (0-100). Higher is lighter.
-         * @returns {string} The lightened hex color.
-         */
-        function lightenColor(hex, percent) {
-            let r = parseInt(hex.substring(1, 3), 16);
-            let g = parseInt(hex.substring(3, 5), 16);
-            let b = parseInt(hex.substring(5, 7), 16);
-
-            // Lighten each component by moving it towards 255 (white)
-            r = Math.min(255, Math.round(r + (255 - r) * percent / 100));
-            g = Math.min(255, Math.round(g + (255 - g) * percent / 100));
-            b = Math.min(255, Math.round(b + (255 - b) * percent / 100));
-
-            const toHex = (c) => c.toString(16).padStart(2, '0');
-            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-        }
-
-        /**
          * Formats a Date object to INSEE-MM-DD string.
          * @param {Date} date
          * @returns {string}
@@ -1114,9 +1095,6 @@
                 habitItem.className = `habit-card relative p-5 rounded-xl shadow-md cursor-grab transition duration-200 ease-in-out flex flex-col space-y-3 ${cardClass}`;
                 habitItem.draggable = true;
                 habitItem.dataset.habitId = habit.id;
-                // Calculate a lightened version of the category color for the background
-            const lightenedBgColor = lightenColor(categoryColor.startsWith('#') ? categoryColor : '#B6B09F', 70); // Lighten by 70%, fallback to earthy-gray if categoryColor is not a valid hex
-            habitItem.style.backgroundColor = lightenedBgColor; // Set the card background
 
                 let completionControlHtml = '';
                 if (habit.habitType === 'binary') {
